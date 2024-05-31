@@ -13,3 +13,6 @@ class Contract(ABC):
 
     @abstractmethod
     def call(self, tx: Transaction): ...
+
+    @abstractmethod
+    def get_method(self, method: str, **params): ...

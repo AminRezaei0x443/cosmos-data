@@ -38,3 +38,7 @@ class IBC(Contract):
             self.disconnect(**tx.data)
         else:
             raise ValueError("Method is not supported")
+
+    def get_method(self, method: str, **params):
+        if method == "get_connections":
+            return self.connections

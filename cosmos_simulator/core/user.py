@@ -5,12 +5,12 @@ from simpy import Environment
 
 class User(ABC):
     def __init__(
-        self, env: Environment, id: str, chains: list[Blockchain], **config
+        self, id: str, env: Environment, chains: dict[str, Blockchain], **config
     ) -> None:
         self.env = env
         self.id = id
         self.sim = None
-        self.chains = {chain.id: chain for chain in chains}
+        self.chains = chains
         self.config = config
 
     @abstractmethod
@@ -18,8 +18,13 @@ class User(ABC):
         pass
 
     def start(self):
-        while True:
-            rate = self.config.get("rate", 1)
-            yield self.env.timeout(rate)
-
-            self.act()
+        repeat = self.config.get("repeat", -1)
+        print("Got User", repeat)
+        if repeat == -1:
+            while True:
+                rate = self.config.get("rate", 1)
+                yield self.env.timeout(rate)
+                self.act()
+        else:
+            print("Act?", self, self.act)
+            yield self.env.process(self.act())

@@ -1,0 +1,1 @@
+python main_full.py > log.txt

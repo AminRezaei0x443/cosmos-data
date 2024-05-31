@@ -24,6 +24,7 @@ class Blockchain:
         self.contracts = {}
         self.balances = {}
         self.mempool = []
+        self.blocks = []
         self.env = env
         self.config = config
 
@@ -36,12 +37,19 @@ class Blockchain:
     def send(self, tx: Transaction):
         self.mempool.append(tx)
 
+    def run_method(self, target: str, method: str, **params):
+        if target not in self.contracts:
+            raise KeyError(f"Target Contract {target} is not deployed")
+        contract = self.contracts[target]
+        return contract.get_method(method, **params)
+
     def start(self):
         while True:
             # Block Generation Time
             block_time = self.config.block_time
             yield self.env.timeout(block_time)
 
+            print("BlockGenStart", self.id, self.mempool)
             if self.mempool:
                 block = Block()
                 block.txs = []
@@ -53,6 +61,7 @@ class Blockchain:
                 else:
                     seq = self.blocks[-1].seq_no + 1
                 block.seq_no = seq
+                print("BlockCreateStart", self.id, self.mempool, block.seq_no)
 
                 for tx in self.mempool:
                     tx.block = block.seq_no
@@ -70,3 +79,4 @@ class Blockchain:
 
                 self.blocks.append(block)
                 self.mempool = []
+                print("[BlockGen]", self.id, "block:", block.seq_no)

@@ -1,13 +1,11 @@
-import simpy
 import json
 import random
 
-from cosmos_simulator.roles.blockchain import Blockchain
-from cosmos_simulator.roles.relayer import Relayer
-from cosmos_simulator.roles.topology_creator import TopologyCreator
-from cosmos_simulator.roles.user import User
+from cosmos_simulator.core.blockchain import Blockchain
+from cosmos_simulator.core.config import BlockchainConfig
+from cosmos_simulator.core.topology_creator import TopologyCreator
 from cosmos_simulator.simulation import CosmosSimulation
-from cosmos_simulator.roles.network_updates import NetworkUpdates
+from cosmos_simulator.core.ibc import IBC
 
 
 def simulate():
@@ -19,25 +17,25 @@ def simulate():
 
     chains = {}
     for n in ecosystem["names"]:
-        c = Blockchain(env, n, block_time=random.randint(5,10))
+        cfg = BlockchainConfig(block_time=random.randint(5, 10))
+        c = Blockchain(n, env, cfg)
+        ibc = IBC()
+        c.deploy("0x::ibc", ibc, precompile=True)
         chains[n] = c
         CosmosSimulation.add_chain(c)
 
-    relayer = Relayer(env, list(chains.values()))
-    CosmosSimulation.add_relayer(relayer)
+    CosmosSimulation.add_user(
+        TopologyCreator("relayer:topology-creator", env, chains, ecosystem)
+    )
+    CosmosSimulation.run(until=100000)
 
-    # for n in ecosystem["names"]:
-    #     u = User(env, f'user-{n}', n, rate=1)
-    #     CosmosSimulation.add_user(u)
+    cs = 0
+    for chain in chains.values():
+        r = chain.run_method("0x::ibc", "get_connections")
+        print(chain.id, r)
+        cs += len(r)
+    print(cs)
 
-    CosmosSimulation.add_user(TopologyCreator(env, chains, ecosystem))
-    # CosmosSimulation.add_user(NetworkUpdates(env))
-
-    CosmosSimulation.run(until=4000)
-
-    for chain in chains.values():    
-        print(chain.network)
-    print(len(ecosystem["conns"]))
 
 if __name__ == "__main__":
     simulate()
