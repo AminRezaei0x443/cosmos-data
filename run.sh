@@ -1,1 +1,1 @@
-python main_full.py > log.txt
+python main.py > log.txt
