@@ -4,9 +4,11 @@ import random
 from cosmos_simulator.core.blockchain import Blockchain
 from cosmos_simulator.core.config import BlockchainConfig
 from cosmos_simulator.core.ls_topology_creator import LSTopologyCreator
+from cosmos_simulator.core.relayer import Relayer
 from cosmos_simulator.simulation import CosmosSimulation
 from cosmos_simulator.core.ls_ibc import LinkStateIBC
 from cosmos_simulator.core.ls_updater import LSUpdater
+from cosmos_simulator.core.ls_propagate_log import LSLogPropagate
 from cosmos_simulator.util.log import log
 
 
@@ -27,6 +29,8 @@ def simulate():
         # Precompile Contracts
         ibc = LinkStateIBC(c)
         c.deploy("0x::ibc", ibc, precompile=True)
+        prop = LSLogPropagate(c)
+        c.deploy("0x::ls::propagate", prop, precompile=True)
         # Define Chains
         chains[n] = c
         CosmosSimulation.add_chain(c)
@@ -40,8 +44,9 @@ def simulate():
         LSUpdater("relayer:topology-creator", env, chains, ecosystem)
     )
 
+    CosmosSimulation.add_user(Relayer("relayer:propagator", env, chains))
     # Run the simulation
-    CosmosSimulation.run(until=22000)
+    CosmosSimulation.run(until=40000)
     log("app", "main", "sim-done", env.now, "Simulation Done")
 
     # Check the actual connections
