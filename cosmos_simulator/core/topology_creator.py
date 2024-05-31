@@ -11,7 +11,7 @@ class TopologyCreator(User):
         env: Environment,
         chains: dict[str, Blockchain],
         ecosystem: dict,
-        **config
+        **config,
     ) -> None:
         # we have custom yields
         config["repeat"] = 1
@@ -22,7 +22,8 @@ class TopologyCreator(User):
         tc = 0
         for src_chain, conn_list in self.ecosystem["conns"].items():
             tc += len(conn_list)
-        print("[TopologyCreator] Creating", tc, "connections")
+        self.log("creating-connections", f"num links: {tc // 2}")
+
         for src_chain, conn_list in self.ecosystem["conns"].items():
             for dst_chain in conn_list:
                 yield self.env.timeout(1)

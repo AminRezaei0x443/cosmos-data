@@ -27,15 +27,12 @@ class User(ABC):
         else:
             yield action
 
+    def log(self, event: str, message: str):
+        log("user", self.id, event, self.env.now, message)
+
     def start(self):
         repeat = self.config.get("repeat", -1)
-        log(
-            "user",
-            self.id,
-            "user-boot",
-            self.env.now,
-            f"Booting user with repeat: {repeat}",
-        )
+        self.log("user-boot", f"Booting user with repeat: {repeat}")
         if repeat == -1:
             while True:
                 rate = self.config.get("rate", 1)

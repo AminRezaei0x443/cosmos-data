@@ -45,19 +45,16 @@ class Blockchain:
         contract = self.contracts[target]
         return contract.get_method(method, **params)
 
+    def log(self, event: str, message: str):
+        log("chain", self.id, event, self.env.now, message)
+
     def start(self):
         while True:
             # Block Generation Time
             block_time = self.config.block_time
             yield self.env.timeout(block_time)
 
-            log(
-                "chain",
-                self.id,
-                "mempool-start",
-                self.env.now,
-                f"len: {len(self.mempool)}",
-            )
+            self.log("mempool-start", f"len: {len(self.mempool)}")
             if self.mempool:
                 block = Block()
                 block.txs = []
@@ -70,9 +67,7 @@ class Blockchain:
                     seq = self.blocks[-1].seq_no + 1
                 block.seq_no = seq
 
-                log(
-                    "chain", self.id, "block-start", self.env.now, f"id: {block.seq_no}"
-                )
+                self.log("block-start", f"id: {block.seq_no}")
                 for tx in self.mempool:
                     tx.block = block.seq_no
                     tx.time = float(self.env.now)
@@ -83,29 +78,11 @@ class Blockchain:
                         contract.call(tx)
                         tx.state = TransactionState.ACCEPTED
                         block.txs.append(tx)
-                        log(
-                            "chain",
-                            self.id,
-                            "tx-add",
-                            self.env.now,
-                            f"target: {tx.target}",
-                        )
+                        self.log("tx-add", f"target: {tx.target}")
                     except Exception as e:
                         tx.state = TransactionState.REJECTED
-                        log(
-                            "chain",
-                            self.id,
-                            "tx-fail",
-                            self.env.now,
-                            f"error: {e}",
-                        )
+                        self.log("tx-fail", f"error: {e}")
 
                 self.blocks.append(block)
                 self.mempool = []
-                log(
-                    "chain",
-                    self.id,
-                    "block-end",
-                    self.env.now,
-                    f"id: {block.seq_no}, len: {len(block.txs)}",
-                )
+                self.log("block-end", f"id: {block.seq_no}, len: {len(block.txs)}")

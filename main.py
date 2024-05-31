@@ -36,7 +36,7 @@ def simulate():
         r = chain.run_method("0x::ibc", "get_connections")
         log("app", chain.id, "analytics", env.now, f"connections: {r}")
         cs += len(r)
-    log("app", "main", "analytics", env.now, f"connections num: {cs}")
+    log("app", "main", "analytics", env.now, f"num links: {cs // 2}")
 
 
 if __name__ == "__main__":
