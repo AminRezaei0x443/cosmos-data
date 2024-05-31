@@ -3,6 +3,8 @@ from cosmos_simulator.core.contract import Contract
 from cosmos_simulator.core.transaction import Transaction, TransactionState
 from simpy import Environment
 
+from cosmos_simulator.util.log import log
+
 
 class Block:
     txs: list[Transaction]
@@ -49,7 +51,13 @@ class Blockchain:
             block_time = self.config.block_time
             yield self.env.timeout(block_time)
 
-            print("BlockGenStart", self.id, self.mempool)
+            log(
+                "chain",
+                self.id,
+                "mempool-start",
+                self.env.now,
+                f"len: {len(self.mempool)}",
+            )
             if self.mempool:
                 block = Block()
                 block.txs = []
@@ -61,8 +69,10 @@ class Blockchain:
                 else:
                     seq = self.blocks[-1].seq_no + 1
                 block.seq_no = seq
-                print("BlockCreateStart", self.id, self.mempool, block.seq_no)
 
+                log(
+                    "chain", self.id, "block-start", self.env.now, f"id: {block.seq_no}"
+                )
                 for tx in self.mempool:
                     tx.block = block.seq_no
                     tx.time = float(self.env.now)
@@ -73,10 +83,29 @@ class Blockchain:
                         contract.call(tx)
                         tx.state = TransactionState.ACCEPTED
                         block.txs.append(tx)
+                        log(
+                            "chain",
+                            self.id,
+                            "tx-add",
+                            self.env.now,
+                            f"target: {tx.target}",
+                        )
                     except Exception as e:
                         tx.state = TransactionState.REJECTED
-                        print("Fucked up TX", e)
+                        log(
+                            "chain",
+                            self.id,
+                            "tx-fail",
+                            self.env.now,
+                            f"error: {e}",
+                        )
 
                 self.blocks.append(block)
                 self.mempool = []
-                print("[BlockGen]", self.id, "block:", block.seq_no)
+                log(
+                    "chain",
+                    self.id,
+                    "block-end",
+                    self.env.now,
+                    f"id: {block.seq_no}, len: {len(block.txs)}",
+                )

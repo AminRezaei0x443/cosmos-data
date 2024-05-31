@@ -6,6 +6,7 @@ from cosmos_simulator.core.config import BlockchainConfig
 from cosmos_simulator.core.topology_creator import TopologyCreator
 from cosmos_simulator.simulation import CosmosSimulation
 from cosmos_simulator.core.ibc import IBC
+from cosmos_simulator.util.log import log
 
 
 def simulate():
@@ -27,14 +28,15 @@ def simulate():
     CosmosSimulation.add_user(
         TopologyCreator("relayer:topology-creator", env, chains, ecosystem)
     )
-    CosmosSimulation.run(until=100000)
+    CosmosSimulation.run(until=4000)
 
+    log("app", "main", "sim-done", env.now, "Simulation Done")
     cs = 0
     for chain in chains.values():
         r = chain.run_method("0x::ibc", "get_connections")
-        print(chain.id, r)
+        log("app", chain.id, "analytics", env.now, f"connections: {r}")
         cs += len(r)
-    print(cs)
+    log("app", "main", "analytics", env.now, f"connections num: {cs}")
 
 
 if __name__ == "__main__":

@@ -6,7 +6,7 @@ doc_space/
 .build/
 .DS_Store
 Icon*
-
+logs/
 # VSCode
 .vscode/
 

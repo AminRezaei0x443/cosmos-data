@@ -1,6 +1,9 @@
+import types
 from abc import ABC, abstractmethod
 from cosmos_simulator.core.blockchain import Blockchain
 from simpy import Environment
+
+from cosmos_simulator.util.log import log
 
 
 class User(ABC):
@@ -17,14 +20,26 @@ class User(ABC):
     def act(self):
         pass
 
+    def safe_act(self):
+        action = self.act()
+        if isinstance(action, types.GeneratorType):
+            yield self.env.process(action)
+        else:
+            yield action
+
     def start(self):
         repeat = self.config.get("repeat", -1)
-        print("Got User", repeat)
+        log(
+            "user",
+            self.id,
+            "user-boot",
+            self.env.now,
+            f"Booting user with repeat: {repeat}",
+        )
         if repeat == -1:
             while True:
                 rate = self.config.get("rate", 1)
                 yield self.env.timeout(rate)
-                self.act()
+                yield self.env.process(self.safe_act())
         else:
-            print("Act?", self, self.act)
-            yield self.env.process(self.act())
+            yield self.env.process(self.safe_act())

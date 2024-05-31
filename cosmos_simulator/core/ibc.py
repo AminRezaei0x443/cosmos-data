@@ -6,6 +6,7 @@ class IBC(Contract):
     connections: list[str]
 
     def __init__(self):
+        super().__init__()
         self.connections = []
 
     def connect(self, chain: str = None, **kwargs) -> None:
