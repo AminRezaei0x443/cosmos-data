@@ -1,9 +1,16 @@
+import typing
 from abc import ABC, abstractmethod
 from cosmos_simulator.core.transaction import Transaction
 
+if typing.TYPE_CHECKING:
+    from cosmos_simulator.core.blockchain import Blockchain
+
 
 class Contract(ABC):
-    def __init__(self) -> None: ...
+    chain: "Blockchain"
+
+    def __init__(self, blockchain: "Blockchain") -> None:
+        self.chain = blockchain
 
     @abstractmethod
     def state_dict(self): ...

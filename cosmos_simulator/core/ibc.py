@@ -1,12 +1,18 @@
+import typing
+
 from cosmos_simulator.core.contract import Contract
 from cosmos_simulator.core.transaction import Transaction, TransactionState
+
+
+if typing.TYPE_CHECKING:
+    from cosmos_simulator.core.blockchain import Blockchain
 
 
 class IBC(Contract):
     connections: list[str]
 
-    def __init__(self):
-        super().__init__()
+    def __init__(self, chain: "Blockchain"):
+        super().__init__(chain)
         self.connections = []
 
     def connect(self, chain: str = None, **kwargs) -> None:
@@ -43,3 +49,4 @@ class IBC(Contract):
     def get_method(self, method: str, **params):
         if method == "get_connections":
             return self.connections
+        raise ValueError("Method is not supported")

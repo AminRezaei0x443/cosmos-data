@@ -3,9 +3,10 @@ import random
 
 from cosmos_simulator.core.blockchain import Blockchain
 from cosmos_simulator.core.config import BlockchainConfig
-from cosmos_simulator.core.topology_creator import TopologyCreator
+from cosmos_simulator.core.ls_topology_creator import LSTopologyCreator
 from cosmos_simulator.simulation import CosmosSimulation
-from cosmos_simulator.core.ibc import IBC
+from cosmos_simulator.core.ls_ibc import LinkStateIBC
+from cosmos_simulator.core.ls_updater import LSUpdater
 from cosmos_simulator.util.log import log
 
 
@@ -24,7 +25,7 @@ def simulate():
         cfg = BlockchainConfig(block_time=random.randint(5, 10))
         c = Blockchain(n, env, cfg)
         # Precompile Contracts
-        ibc = IBC(c)
+        ibc = LinkStateIBC(c)
         c.deploy("0x::ibc", ibc, precompile=True)
         # Define Chains
         chains[n] = c
@@ -32,11 +33,15 @@ def simulate():
 
     # Add the user responsible for creating topologies
     CosmosSimulation.add_user(
-        TopologyCreator("relayer:topology-creator", env, chains, ecosystem)
+        LSTopologyCreator("relayer:topology-creator", env, chains, ecosystem)
+    )
+
+    CosmosSimulation.add_user(
+        LSUpdater("relayer:topology-creator", env, chains, ecosystem)
     )
 
     # Run the simulation
-    CosmosSimulation.run(until=4000)
+    CosmosSimulation.run(until=22000)
     log("app", "main", "sim-done", env.now, "Simulation Done")
 
     # Check the actual connections
@@ -44,8 +49,10 @@ def simulate():
 
     for chain in chains.values():
         r = chain.run_method("0x::ibc", "get_connections")
+        n = chain.run_method("0x::ibc", "get_network")
         cs += len(r)
-        log("app", chain.id, "analytics", env.now, f"connections: {r}")
+        # log("app", chain.id, "analytics", env.now, f"connections: {r}")
+        log("app", chain.id, "analytics", env.now, f"network: {n}")
 
     log("app", "main", "analytics", env.now, f"num links: {cs // 2}")
 
