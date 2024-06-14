@@ -37,6 +37,10 @@ class User(ABC):
             while True:
                 rate = self.config.get("rate", 1)
                 yield self.env.timeout(rate)
-                yield self.env.process(self.safe_act())
+                normal = self.config.get("normal", False)
+                if normal:
+                    self.act()
+                else:
+                    yield self.env.process(self.safe_act())
         else:
             yield self.env.process(self.safe_act())

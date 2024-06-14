@@ -29,6 +29,7 @@ class Relayer(User):
                     self.log("process-log", log)
                     target_chain = log.pop("target_chain")
                     target_contract = log.pop("target_contract")
+                    log["source_chain"] = chain.id
                     tx = Transaction(target_contract, 0, log)
                     self.chains[target_chain].send(tx)
                 self.processed_logs[chain.id] = len(props)

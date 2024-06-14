@@ -25,13 +25,15 @@ class LinkStateIBC(IBC):
         self.network = compose(self.network, updated_network)
         self.network.add_edge(self.chain.id, chain)
         # Let the network know about updates
+        update_id = uuid.uuid4().hex
+        #
         for c in self.connections:
             tx = Transaction(
                 "0x::ls::propagate",
                 0,
                 {
                     "method": "ls_update",
-                    "update_id": uuid.uuid4().hex,
+                    "update_id": update_id,
                     "target_chain": c,
                     "target_contract": "0x::ibc",
                     "updated_network": self.network,
@@ -43,13 +45,14 @@ class LinkStateIBC(IBC):
         super().disconnect(chain=chain, **kwargs)
         self.network.remove_edge(self.chain.id, chain)
         # Let the network know about updates
+        update_id = uuid.uuid4().hex
         for c in self.connections:
             tx = Transaction(
                 "0x::ls::propagate",
                 0,
                 {
                     "method": "ls_update",
-                    "update_id": uuid.uuid4().hex,
+                    "update_id": update_id,
                     "target_chain": c,
                     "target_contract": "0x::ibc",
                     "updated_network": self.network,
@@ -74,6 +77,24 @@ class LinkStateIBC(IBC):
             new_net.remove_edge(s, d)
         self.network = new_net
         self.processed_updates.append(update_id)
+        # 3. Propagate to others
+        source_chain = kwargs.pop("source_chain", None)
+        for c in self.connections:
+            if c == source_chain:
+                continue
+            tx = Transaction(
+                "0x::ls::propagate",
+                0,
+                {
+                    **kwargs,
+                    "target_chain": c,
+                    "target_contract": "0x::ibc",
+                    "updated_network": self.network,
+                    "deleted_links": [(self.chain.id, c)],
+                },
+            )
+            self.chain.send(tx)
+        print("update ibc")
 
     def state_dict(self):
         return {

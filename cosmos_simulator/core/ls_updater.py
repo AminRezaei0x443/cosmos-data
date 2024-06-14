@@ -37,3 +37,16 @@ class LSUpdater(User):
             },
         )
         self.chains[src_chain].send(tx)
+        counterparty_network = self.chains[src_chain].run_method(
+            "0x::ibc", "get_network"
+        )
+        tx2 = Transaction(
+            "0x::ibc",
+            0,
+            {
+                "method": "connect",
+                "chain": src_chain,
+                "updated_network": counterparty_network,
+            },
+        )
+        self.chains[dst_chain].send(tx2)

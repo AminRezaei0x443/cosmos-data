@@ -1,6 +1,7 @@
 import json
 import random
 
+from cosmos_simulator.analytics.network_state import NetworkStateChecker
 from cosmos_simulator.core.blockchain import Blockchain
 from cosmos_simulator.core.config import BlockchainConfig
 from cosmos_simulator.core.ls_topology_creator import LSTopologyCreator
@@ -10,6 +11,7 @@ from cosmos_simulator.core.ls_ibc import LinkStateIBC
 from cosmos_simulator.core.ls_updater import LSUpdater
 from cosmos_simulator.core.ls_propagate_log import LSLogPropagate
 from cosmos_simulator.util.log import log
+from networkx import Graph
 
 
 def simulate():
@@ -21,13 +23,21 @@ def simulate():
     with open("data/chains-info.json") as f:
         ecosystem = json.load(f)
 
+    network = Graph()
+    for src_chain, conns in ecosystem["conns"].items():
+        for dst_chain in conns:
+            network.add_edge(src_chain, dst_chain)
+    print("initial network", network)
+
     chains = {}
     for n in ecosystem["names"]:
         # Create Chains
-        cfg = BlockchainConfig(block_time=random.randint(5, 10))
+        cfg = BlockchainConfig(block_time=random.randint(10, 20))
         c = Blockchain(n, env, cfg)
         # Precompile Contracts
         ibc = LinkStateIBC(c)
+        ibc.connections = ecosystem["conns"].get(n, [])
+        ibc.network = network
         c.deploy("0x::ibc", ibc, precompile=True)
         prop = LSLogPropagate(c)
         c.deploy("0x::ls::propagate", prop, precompile=True)
@@ -36,15 +46,15 @@ def simulate():
         CosmosSimulation.add_chain(c)
 
     # Add the user responsible for creating topologies
-    CosmosSimulation.add_user(
-        LSTopologyCreator("relayer:topology-creator", env, chains, ecosystem)
-    )
-    #
     # CosmosSimulation.add_user(
-    #     LSUpdater("relayer:topology-creator", env, chains, ecosystem)
+    #     LSTopologyCreator("relayer:topology-creator", env, chains, ecosystem)
     # )
 
+    CosmosSimulation.add_user(LSUpdater("relayer:link-up-1", env, chains, ecosystem))
     CosmosSimulation.add_user(Relayer("relayer:propagator", env, chains))
+    CosmosSimulation.add_user(
+        NetworkStateChecker("stats:checker", env, chains, ["cifer1", "cosmoshub"])
+    )
     # Run the simulation
     CosmosSimulation.run(until=60000)
     log("app", "main", "sim-done", env.now, "Simulation Done")
