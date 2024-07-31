@@ -1,7 +1,7 @@
-from enum import Enum
+from enum import IntEnum
 
 
-class TransactionState(Enum):
+class TransactionState(IntEnum):
     DRAFT = 0
     ACCEPTED = 1
     REJECTED = 2

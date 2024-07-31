@@ -1,0 +1,1 @@
+[{"txs": [{"target": "0x::ibc", "value": 0, "data": {"method": "connect", "chain": "osmosis"}, "state": 1, "gas_used": 0, "out_actions": [], "time": 2230.0, "block": 0}], "seq_no": 0, "time": 2230.0}]

@@ -7,6 +7,8 @@ from cosmos_simulator.core.topology_creator import TopologyCreator
 from cosmos_simulator.simulation import CosmosSimulation
 from cosmos_simulator.core.ibc import IBC
 from cosmos_simulator.util.log import log
+import shutil
+import os
 
 
 def simulate():
@@ -42,13 +44,25 @@ def simulate():
     # Check the actual connections
     cs = 0
 
+    try:
+        shutil.rmtree('dataset')
+    except:
+        pass
+
+    os.makedirs('dataset')
+
     for chain in chains.values():
         r = chain.run_method("0x::ibc", "get_connections")
         cs += len(r)
         log("app", chain.id, "analytics", env.now, f"connections: {r}")
+        with open(f"dataset/{chain.id}.json", 'w') as f:
+            bb = chain.blocks
+            xx = list(map(lambda x: x.d(), bb))
+            json.dump(xx, f)
 
     log("app", "main", "analytics", env.now, f"num links: {cs // 2}")
 
+    
 
 if __name__ == "__main__":
     simulate()

@@ -11,6 +11,12 @@ class Block:
     seq_no: int
     time: float
 
+    def d(self):
+        return {
+            "txs": list(map(lambda x: x.__dict__, self.txs)),
+            "seq_no": self.seq_no,
+            "time": self.time
+        }
 
 class Blockchain:
     contracts: dict[str, Contract]
